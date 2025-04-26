@@ -1,91 +1,101 @@
-# Crop Recommendation System
+# 🌱 Smart Crop Recommendation System
 
-This project implements a machine learning model to recommend crops based on soil and environmental parameters using a Random Forest Classifier.
+A machine learning-based application that helps farmers and agricultural experts make informed decisions about which crops to plant based on soil and environmental conditions.
 
 ## Features
 
-The system uses the following parameters to make recommendations:
-- N: Nitrogen content in soil
-- P: Phosphorous content in soil
-- K: Potassium content in soil
-- temperature: Temperature in degree Celsius
-- humidity: Relative humidity in %
-- ph: pH value of soil
-- rainfall: Rainfall in mm
+- **Intelligent Predictions**: Get crop recommendations based on soil and environmental parameters
+- **Data Insights**: Explore dataset analysis and visualizations
+- **User-Friendly Interface**: Simple parameter input and clear recommendations
+- **Educational Resources**: Learn about agricultural parameters and best practices
 
-## Requirements
+## Prerequisites
 
-- Python 3.7+
-- pandas
-- numpy
-- scikit-learn
+- Python 3.11 or higher
+- pip (Python package installer)
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+git clone https://github.com/yourusername/crop-recommendation.git
+cd crop-recommendation
 ```
 
-2. Set up the virtual environment and install dependencies:
+2. Create and activate a virtual environment:
 ```bash
-make setup
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+3. Install the required packages:
+```bash
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-### Interactive Crop Recommender
-
-Run the interactive crop recommender:
+1. Start the Streamlit application:
 ```bash
-make run-recommender
+streamlit run app/Home.py
 ```
 
-This will:
-- Load or train the model using the dataset
-- Prompt you to enter soil and environmental parameters
-- Recommend the most suitable crop based on your inputs
+2. Open your web browser and navigate to the URL shown in the terminal (typically http://localhost:8501)
 
-### Training the Model
+3. Use the sidebar to navigate between pages:
+   - **Home**: Introduction and overview
+   - **Crop Prediction**: Enter parameters and get recommendations
+   - **Data Insights**: Explore dataset analysis and visualizations
 
-Run the model training script:
-```bash
-make run
-```
+## Parameters
 
-This will:
-- Load the data from 'Crop_Recommendation.csv'
-- Preprocess the data
-- Train the model
-- Evaluate its performance
-- Save the model
-- Make an example prediction
+The system considers the following parameters for crop recommendations:
 
-### Cleaning Up
+### Soil Parameters
+- **Nitrogen (N)**: Essential for leaf growth
+- **Phosphorus (P)**: Important for root development
+- **Potassium (K)**: Enhances crop quality
+- **pH**: Affects nutrient availability
 
-To clean up the project (remove virtual environment and cache files):
-```bash
-make clean
-```
+### Environmental Parameters
+- **Temperature**: Influences plant growth
+- **Humidity**: Affects plant health
+- **Rainfall**: Determines water availability
 
 ## Project Structure
 
-- `crop_recommender.py`: Interactive script for users to input parameters and get crop recommendations
-- `crop_recommendation.py`: Script for training and evaluating the model
-- `requirements.txt`: List of Python dependencies
-- `Makefile`: Contains commands for setting up and running the project
-- `Crop_Recommendation.csv`: Dataset containing soil and environmental parameters
-
-## Example
-
-The system will make predictions based on soil and environmental parameters. Here's an example of the input format:
-
-```python
-sample_features = np.array([[90, 42, 43, 20.8, 82.0, 6.5, 202.9]])
-# Features order: [N, P, K, temperature, humidity, ph, rainfall]
 ```
+crop-recommendation/
+├── app/
+│   ├── Home.py                 # Home page
+│   └── pages/
+│       ├── 1_Crop_Prediction.py # Crop prediction page
+│       └── 2_Data_Insights.py   # Data insights page
+├── .streamlit/
+│   └── config.toml             # Streamlit configuration
+├── crop_recommender.py         # Core recommendation logic
+├── requirements.txt            # Python dependencies
+└── README.md                   # This file
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a new branch for your feature
+3. Commit your changes
+4. Push to your branch
+5. Create a Pull Request
 
 ## License
 
-[Your License] 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Dataset: Crop Recommendation Dataset
+- Technologies: Python, Streamlit, scikit-learn, pandas, numpy
+- Contributors: [Your Name]
+
+## Contact
+
+For questions or suggestions, please open an issue in the GitHub repository. 
