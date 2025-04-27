@@ -17,6 +17,40 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Regional adaptation factors
+REGIONAL_FACTORS = {
+    'Tropical': {
+        'rainfall_multiplier': 1.2,
+        'temperature_multiplier': 1.1,
+        'humidity_multiplier': 1.15
+    },
+    'Subtropical': {
+        'rainfall_multiplier': 1.1,
+        'temperature_multiplier': 1.05,
+        'humidity_multiplier': 1.1
+    },
+    'Arid': {
+        'rainfall_multiplier': 0.8,
+        'temperature_multiplier': 1.2,
+        'humidity_multiplier': 0.7
+    },
+    'Semi-arid': {
+        'rainfall_multiplier': 0.9,
+        'temperature_multiplier': 1.15,
+        'humidity_multiplier': 0.8
+    },
+    'Mediterranean': {
+        'rainfall_multiplier': 1.0,
+        'temperature_multiplier': 1.0,
+        'humidity_multiplier': 1.0
+    },
+    'Temperate': {
+        'rainfall_multiplier': 1.05,
+        'temperature_multiplier': 0.95,
+        'humidity_multiplier': 1.05
+    }
+}
+
 class CropRecommender:
     """
     A class to handle crop recommendation using machine learning.
@@ -24,7 +58,6 @@ class CropRecommender:
     This class encapsulates all the functionality needed to load data,
     preprocess it, train a model, and make predictions.
     """
-    file_path = 'Crop_Recommendation.csv'
     def __init__(self, model_path='crop_recommendation_model.pkl'):
         """
         Initialize the CropRecommender.
@@ -36,7 +69,7 @@ class CropRecommender:
         self.model = None
         self.scaler = None
         
-    def load_data(self, file_path):
+    def load_data(self, file_path='Crop_Recommendation.csv'):
         """
         Load and prepare the dataset.
         
@@ -45,10 +78,6 @@ class CropRecommender:
             
         Returns:
             tuple: Features (X) and target variable (y)
-            
-        Raises:
-            FileNotFoundError: If the data file doesn't exist
-            ValueError: If the data format is incorrect
         """
         try:
             # Get the absolute path to the CSV file
@@ -164,9 +193,20 @@ class CropRecommender:
             logger.error(f"Error loading model: {str(e)}")
             return False
 
-    def predict_top_crops(self, features, top_n=3):
+    def predict_top_crops(self, features, region=None, top_n=3):
         """
         Predict top N suitable crops with confidence scores.
+        
+        Args:
+            features (list): List of 7 features in order [N, P, K, temperature, humidity, ph, rainfall]
+            region (str, optional): Region name for adjusting features. If None, no adjustment is made.
+            top_n (int, optional): Number of top crops to return. Defaults to 3.
+            
+        Returns:
+            list: List of tuples (crop_name, confidence_score)
+            
+        Raises:
+            ValueError: If model or scaler is not trained, or if features are invalid
         """
         if self.model is None or self.scaler is None:
             raise ValueError("Model or scaler not trained yet")
@@ -175,8 +215,24 @@ class CropRecommender:
         if len(features) != 7:
             raise ValueError(f"Expected 7 features, got {len(features)}")
             
+        # Create a copy of features to avoid modifying the original
+        adjusted_features = features.copy()
+            
+        # Apply regional factors if specified
+        if region and region in REGIONAL_FACTORS:
+            try:
+                factors = REGIONAL_FACTORS[region]
+                adjusted_features[3] *= factors['temperature_multiplier']  # temperature
+                adjusted_features[4] *= factors['humidity_multiplier']     # humidity
+                adjusted_features[6] *= factors['rainfall_multiplier']     # rainfall
+                logger.info(f"Applied regional factors for {region}")
+            except Exception as e:
+                logger.warning(f"Error applying regional factors: {str(e)}")
+                # If regional factors fail, use original features
+                adjusted_features = features
+            
         # Reshape and scale features
-        features_array = np.array(features).reshape(1, -1)
+        features_array = np.array(adjusted_features).reshape(1, -1)
         features_scaled = self.scaler.transform(features_array)
         
         # Get probabilities for all crops
@@ -186,11 +242,18 @@ class CropRecommender:
         top_indices = np.argsort(probabilities)[-top_n:][::-1]
         return [(self.model.classes_[i], probabilities[i]) for i in top_indices]
 
-    def predict_crop(self, features):
+    def predict_crop(self, features, region=None):
         """
         Predict the best crop (returns single prediction).
+        
+        Args:
+            features (list): List of 7 features in order [N, P, K, temperature, humidity, ph, rainfall]
+            region (str, optional): Region name for adjusting features
+            
+        Returns:
+            str: Name of the best predicted crop
         """
-        predictions = self.predict_top_crops(features, top_n=1)
+        predictions = self.predict_top_crops(features, region, top_n=1)
         return predictions[0][0]
 
 def get_user_input():
@@ -212,7 +275,13 @@ def get_user_input():
         ph = float(input("pH value of soil: "))
         rainfall = float(input("Rainfall in mm: "))
         
-        return [n, p, k, temperature, humidity, ph, rainfall]
+        # Get region input
+        print("\nAvailable regions:", ", ".join(REGIONAL_FACTORS.keys()))
+        region = input("Enter region (press Enter to skip): ").strip()
+        if not region or region not in REGIONAL_FACTORS:
+            region = None
+        
+        return [n, p, k, temperature, humidity, ph, rainfall], region
     except ValueError:
         print("Error: Please enter valid numerical values.")
         sys.exit(1)
@@ -229,7 +298,7 @@ def main():
         if not recommender.load_model():
             logger.info("Training new model...")
             # Load and prepare data
-            X, y = recommender.load_data('Crop_Recommendation.csv')
+            X, y = recommender.load_data()
             
             # Train model
             recommender.train_model(X, y)
@@ -238,14 +307,15 @@ def main():
             recommender.save_model()
         
         # Get user input
-        features = get_user_input()
+        features, region = get_user_input()
         
         # Make prediction
-        predicted_crop = recommender.predict_crop(features)
+        predictions = recommender.predict_top_crops(features, region=region)
         
-        # Display result
-        print("\n=== Recommendation ===")
-        print(f"Based on the provided parameters, the recommended crop is: {predicted_crop}")
+        # Display results
+        print("\n=== Recommendations ===")
+        for i, (crop, confidence) in enumerate(predictions, 1):
+            print(f"{i}. {crop}: {confidence:.1%} confidence")
         
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")

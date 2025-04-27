@@ -115,7 +115,9 @@ with col2:
 with col3:
     st.markdown('<div class="parameter-section">', unsafe_allow_html=True)
     st.subheader("Regional Factors")
-    region = st.selectbox("Select Region", options=list(REGIONAL_FACTORS.keys()))
+    region = st.selectbox("Select Region", options=["skip"]+list(REGIONAL_FACTORS.keys()))
+    if region=="skip":
+        region=None
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Predict Button
@@ -126,10 +128,9 @@ with col2:
 # Run prediction
 if predict_button:
     features = [nitrogen, phosphorus, potassium, temperature, humidity, ph, rainfall]
-    adjusted_features = apply_regional_factors(features, region)
 
     try:
-        predictions = recommender.predict_top_crops(adjusted_features, top_n=3)
+        predictions = recommender.predict_top_crops(features, region=region)
 
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
         st.subheader("Top Crop Recommendations")
@@ -163,7 +164,7 @@ if predict_button:
         summary_data = {
             'Parameter': ['Nitrogen (N)', 'Phosphorus (P)', 'Potassium (K)', 'Temperature (°C)', 'Humidity (%)', 'pH', 'Rainfall (mm)'],
             'Original Value': features,
-            'Adjusted Value': adjusted_features
+            'Adjusted Value': features
         }
         summary_df = pd.DataFrame(summary_data)
         st.dataframe(summary_df, use_container_width=True)
